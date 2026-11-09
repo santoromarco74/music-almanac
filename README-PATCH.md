@@ -1,44 +1,19 @@
-# Music Almanac — patch fase 1
+# Music Almanac — patch MusicBrainz ingestion
 
-Questa patch aggiunge:
-- CRUD REST per le relazioni tra gruppi e membri (`/api/v1/memberships`);
-- validazione degli artisti referenziati, delle date e dei duplicati;
-- struttura Alembic funzionante e revisione baseline non distruttiva;
-- registrazione del router memberships e versione API 0.4.0.
+Aggiunge:
+- `backend/app/api/routes/ingestion.py`: connettore e endpoint di ricerca artisti.
+- `backend/app/main.py`: registrazione router e versione 0.5.0.
+- `.env.example`: variabile User-Agent.
+- `docs/ingestion-musicbrainz.md`: istruzioni operative.
 
 ## Applicazione
-
-Estrarre il contenuto dello ZIP nella radice del repository, sovrascrivendo
-`backend/app/main.py` e `backend/alembic.ini` e aggiungendo gli altri file.
-
-Ricostruire/riavviare l'API:
+Estrarre lo ZIP nella root del repository, sovrascrivendo `backend/app/main.py`. Aggiungere `MUSICBRAINZ_USER_AGENT` al `.env` locale senza sovrascrivere le credenziali esistenti.
 
 ```bash
-docker compose up -d --build
+docker compose up -d --build api
+curl -X POST "http://localhost:8000/api/v1/ingestion/musicbrainz/artists/search?q=David%20Bowie&limit=5"
 ```
 
-Per un database già creato dallo schema SQL iniziale, registrare la baseline
-una sola volta:
+Non eseguire `docker compose down -v`: non serve alcuna migrazione e non bisogna cancellare i volumi persistenti.
 
-```bash
-docker compose exec api alembic stamp 0001_existing_schema
-```
-
-Non eseguire `docker compose down -v`: il volume PostgreSQL contiene i dati.
-
-## Endpoint aggiunti
-
-- `GET /api/v1/memberships`
-- `POST /api/v1/memberships`
-- `GET /api/v1/memberships/{membership_id}`
-- `PATCH /api/v1/memberships/{membership_id}`
-- `DELETE /api/v1/memberships/{membership_id}`
-
-Filtri lista: `group_artist_id`, `member_artist_id`, `offset`, `limit`.
-
-## Nota di collaudo
-
-La patch è stata preparata sulla base dei file sorgente letti dal branch
-`main`; non è stata eseguita contro il database Docker dell'utente. Prima di
-considerare la fase validata occorre eseguire i test d'integrazione nel suo
-ambiente. La baseline Alembic non modifica lo schema esistente.
+La patch usa `sources`, `ingestion_runs` e `raw_records`, già presenti nello schema. I payload restano in stato `PENDING`; non vengono creati automaticamente artisti canonici. Testare nell'ambiente Docker prima di considerare validata l'integrazione.
