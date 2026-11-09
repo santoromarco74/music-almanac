@@ -1,47 +1,44 @@
-# Music Almanac — Genres API patch
+# Music Almanac — patch fase 1
 
-Questa patch aggiunge il modulo REST per la tabella `genres`, mantenendo gli endpoint Artists esistenti.
+Questa patch aggiunge:
+- CRUD REST per le relazioni tra gruppi e membri (`/api/v1/memberships`);
+- validazione degli artisti referenziati, delle date e dei duplicati;
+- struttura Alembic funzionante e revisione baseline non distruttiva;
+- registrazione del router memberships e versione API 0.4.0.
 
-## File inclusi
+## Applicazione
 
-- `backend/app/schemas.py` — versione completa basata sul file locale fornito, con gli schemi GenreCreate/GenreUpdate/GenreRead.
-- `backend/app/api/routes/genres.py` — CRUD dei generi.
-- `backend/app/main.py` — registra il router `/api/v1/genres` e mantiene `/health`, `/api/v1` e Artists API.
+Estrarre il contenuto dello ZIP nella radice del repository, sovrascrivendo
+`backend/app/main.py` e `backend/alembic.ini` e aggiungendo gli altri file.
 
-## Installazione su Windows
+Ricostruire/riavviare l'API:
 
-1. Arrestare/lasciare gestire il riavvio a Docker Compose; non cancellare i volumi.
-2. Estrarre lo ZIP nella root `C:\Users\saintgold\music-almanac`, mantenendo le directory e sovrascrivendo `schemas.py` e `main.py`.
-3. Verificare che `backend/app/api/routes/genres.py` sia presente.
-4. Eseguire:
-
-```powershell
-docker compose up --build -d
-docker compose ps
-docker compose logs --tail=80 api
+```bash
+docker compose up -d --build
 ```
 
-5. Aprire `http://localhost:8000/docs`.
+Per un database già creato dallo schema SQL iniziale, registrare la baseline
+una sola volta:
+
+```bash
+docker compose exec api alembic stamp 0001_existing_schema
+```
+
+Non eseguire `docker compose down -v`: il volume PostgreSQL contiene i dati.
 
 ## Endpoint aggiunti
 
-- `GET /api/v1/genres` — elenco, ricerca `q`, filtro `parent_genre_id`, `roots_only`, paginazione.
-- `POST /api/v1/genres` — crea genere.
-- `GET /api/v1/genres/{genre_id}` — dettaglio.
-- `PATCH /api/v1/genres/{genre_id}` — modifica.
-- `DELETE /api/v1/genres/{genre_id}` — elimina; restituisce 409 se ha sottogeneri.
+- `GET /api/v1/memberships`
+- `POST /api/v1/memberships`
+- `GET /api/v1/memberships/{membership_id}`
+- `PATCH /api/v1/memberships/{membership_id}`
+- `DELETE /api/v1/memberships/{membership_id}`
 
-La patch non esegue migrazioni e non modifica lo schema PostgreSQL: utilizza le colonne già presenti in `001_schema.sql`.
+Filtri lista: `group_artist_id`, `member_artist_id`, `offset`, `limit`.
 
-## Test iniziale
+## Nota di collaudo
 
-Creare un genere principale:
-
-```json
-{
-  "name": "Rock",
-  "description": "Genere di musica popolare sviluppatosi a partire dal rock and roll."
-}
-```
-
-La risposta `201 Created` restituisce l'UUID assegnato al genere. Conservare quell'UUID per i test successivi e per associarlo a David Bowie tramite `PATCH /api/v1/artists/{artist_id}`.
+La patch è stata preparata sulla base dei file sorgente letti dal branch
+`main`; non è stata eseguita contro il database Docker dell'utente. Prima di
+considerare la fase validata occorre eseguire i test d'integrazione nel suo
+ambiente. La baseline Alembic non modifica lo schema esistente.
