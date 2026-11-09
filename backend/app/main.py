@@ -5,17 +5,19 @@ from app.api.routes.artists import router as artists_router
 from app.api.routes.genres import router as genres_router
 from app.api.routes.ingestion import router as ingestion_router
 from app.api.routes.memberships import router as memberships_router
+from app.api.routes.musicbrainz_normalizer import router as musicbrainz_normalizer_router
 from app.db import engine
 
 app = FastAPI(
     title="Music Almanac API",
-    version="0.5.0",
+    version="0.6.0",
     description="API per l'archivio storico musicale Music Almanac.",
 )
 app.include_router(artists_router, prefix="/api/v1")
 app.include_router(genres_router, prefix="/api/v1")
 app.include_router(memberships_router, prefix="/api/v1")
 app.include_router(ingestion_router, prefix="/api/v1")
+app.include_router(musicbrainz_normalizer_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["system"])
@@ -29,6 +31,6 @@ def health():
 def api_root():
     return {
         "name": "Music Almanac API",
-        "version": "0.5.0",
-        "modules": ["artists", "genres", "memberships", "ingestion"],
+        "version": "0.6.0",
+        "modules": ["artists", "genres", "memberships", "ingestion", "musicbrainz_normalizer"],
     }
