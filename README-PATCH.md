@@ -1,19 +1,30 @@
-# Patch Music Almanac v0.6.0 — Normalizzatore MusicBrainz
+# Patch Music Almanac v0.7.0
 
-## File inclusi
-- `backend/app/api/routes/musicbrainz_normalizer.py`
-- `backend/app/main.py`
-- `docs/ingestion-musicbrainz-normalizer.md`
+Aggiunge:
+- tabella `artist_aliases` tramite migrazione Alembic 0002;
+- lookup MusicBrainz di dettaglio con `inc=aliases+tags`;
+- normalizzazione di alias e tag, con associazione soltanto a generi già esistenti;
+- gestione transazionale e idempotente dell'MBID;
+- API version 0.7.0.
 
 ## Applicazione
-1. Estrai lo ZIP nella root del repository, sovrascrivendo `backend/app/main.py`.
-2. Ricostruisci e riavvia l'API:
+Estrarre lo ZIP nella directory del progetto mantenendo i percorsi relativi e sovrascrivendo i file inclusi.
 
 ```powershell
 docker compose up -d --build api
+docker compose exec api alembic current
+docker compose exec api alembic upgrade head
 ```
 
-3. Verifica `http://localhost:8000/health`.
-4. Consulta la preview descritta in `docs/ingestion-musicbrainz-normalizer.md`.
+Se `alembic current` non mostra alcuna revisione e il database contiene già lo schema iniziale, eseguire prima:
+```powershell
+docker compose exec api alembic stamp 0001_existing_schema
+docker compose exec api alembic upgrade head
+```
+Non eseguire `stamp` se una revisione è già registrata. Non usare `docker compose down -v`.
 
-La patch non modifica lo schema PostgreSQL e non richiede migrazioni.
+## Smoke test
+```powershell
+curl.exe http://localhost:8000/health
+curl.exe http://localhost:8000/api/v1
+```
