@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import re
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,7 +16,7 @@ class NormalizeArtistRequest(BaseModel):
     existing_artist_id: UUID | None = None
 
 def _year(value):
-    return int(value[:4]) if isinstance(value,str) and re.match(r"^\\d{4}",value) else None
+    return int(value[:4]) if isinstance(value,str) and re.match(r"^\d{4}",value) else None
 
 def _candidate(payload):
     name = payload.get("name")
