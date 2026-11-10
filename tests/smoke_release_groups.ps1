@@ -16,7 +16,9 @@ $expected = @(
   '/api/v1/ingestion/musicbrainz/release-groups/normalize/{mbid}'
 )
 foreach ($path in $expected) {
-  if (-not $openapi.paths.ContainsKey($path)) { throw "Endpoint non registrato: $path" }
+ if ($openapi.paths.PSObject.Properties.Name -notcontains $path) {
+    throw "Endpoint non registrato: $path"
+}
 }
 
 Write-Host 'Smoke test v1.2.0 superato: health, versione e 4 endpoint presenti.'

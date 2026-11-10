@@ -12,15 +12,17 @@ from app.api.routes.memberships import router as memberships_router
 from app.api.routes.musicbrainz_lookup import router as musicbrainz_lookup_router
 from app.api.routes.musicbrainz_normalizer import router as musicbrainz_normalizer_router
 from app.api.routes.musicbrainz_release_groups import router as musicbrainz_release_groups_router
+from app.api.routes.musicbrainz_releases import router as musicbrainz_releases_router
 from app.api.routes.provenance import router as provenance_router
 from app.db import engine
 
-app = FastAPI(title="Music Almanac API", version="1.2.0", description="Archivio storico musicale internazionale.")
+app = FastAPI(title="Music Almanac API", version="1.3.0", description="Archivio storico musicale internazionale.")
 
 for route in (artists_router, genres_router, memberships_router, ingestion_router,
               musicbrainz_lookup_router, musicbrainz_normalizer_router,
-              musicbrainz_release_groups_router, catalog_router, events_router,
-              provenance_router, awards_router, editorial_router, discovery_router):
+              musicbrainz_release_groups_router, musicbrainz_releases_router,
+              catalog_router, events_router, provenance_router, awards_router,
+              editorial_router, discovery_router):
     app.include_router(route, prefix="/api/v1")
 
 
@@ -33,10 +35,10 @@ def health():
 
 @app.get("/api/v1", tags=["system"])
 def api_root():
-    return {"name": "Music Almanac API", "version": "1.2.0", "modules": [
+    return {"name": "Music Almanac API", "version": "1.3.0", "modules": [
         "artists", "genres", "memberships", "ingestion", "musicbrainz_lookup",
-        "musicbrainz_normalizer", "musicbrainz_release_groups", "labels",
-        "release_groups", "releases", "venues", "events", "sources",
+        "musicbrainz_normalizer", "musicbrainz_release_groups", "musicbrainz_releases",
+        "labels", "release_groups", "releases", "venues", "events", "sources",
         "external_identifiers", "entity_sources", "date_assertions", "awards",
         "editorial", "calendar", "search", "export"
     ]}
