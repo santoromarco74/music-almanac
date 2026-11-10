@@ -1,4 +1,4 @@
-from datetime import date
+﻿from datetime import date
 from uuid import UUID
 from fastapi import APIRouter,Depends,HTTPException,Query,Response
 from sqlalchemy import text
@@ -22,7 +22,7 @@ def event_detail(db,eid):
 
 @router.get("/venues")
 def venues(q:str|None=None,city:str|None=None,country_code:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=200),db:Session=Depends(get_db)):
-    xs=db.execute(text("SELECT * FROM venues WHERE (:q IS NULL OR name ILIKE '%'||:q||'%') AND (:city IS NULL OR city ILIKE '%'||:city||'%') AND (:c IS NULL OR country_code=:c) ORDER BY lower(name),city,id OFFSET :o LIMIT :n"),{"q":q,"city":city,"c":country_code.upper() if country_code else None,"o":offset,"n":limit}).mappings().all()
+    xs=db.execute(text("SELECT * FROM venues WHERE (CAST(:q AS TEXT) IS NULL OR name ILIKE '%'||:q||'%') AND (CAST(:city AS TEXT) IS NULL OR city ILIKE '%'||:city||'%') AND (CAST(:c AS CHAR(2)) IS NULL OR country_code=:c) ORDER BY lower(name),city,id OFFSET :o LIMIT :n"),{"q":q,"city":city,"c":country_code.upper() if country_code else None,"o":offset,"n":limit}).mappings().all()
     return [dict(x) for x in xs]
 
 @router.post("/venues",status_code=201)
@@ -56,11 +56,11 @@ def delete_venue(rid:UUID,db:Session=Depends(get_db)):
 @router.get("/events")
 def events(q:str|None=None,event_type:str|None=None,year:int|None=None,month:int|None=Query(None,ge=1,le=12),day:int|None=Query(None,ge=1,le=31),artist_id:UUID|None=None,status:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=200),db:Session=Depends(get_db)):
     xs=db.execute(text("""SELECT e.id,e.title,e.event_type,e.event_year,e.event_month,e.event_day,e.date_precision,e.event_date,e.end_date,e.country_code,e.status,v.name venue_name,v.city venue_city
-      FROM events e LEFT JOIN venues v ON v.id=e.venue_id WHERE (:q IS NULL OR e.title ILIKE '%'||:q||'%')
-      AND (:t IS NULL OR e.event_type=CAST(:t AS event_type)) AND (:y IS NULL OR e.event_year=:y)
-      AND (:m IS NULL OR e.event_month=:m) AND (:d IS NULL OR e.event_day=:d)
-      AND (:a IS NULL OR EXISTS(SELECT 1 FROM event_artists x WHERE x.event_id=e.id AND x.artist_id=:a))
-      AND (:s IS NULL OR e.status=CAST(:s AS verification_status))
+      FROM events e LEFT JOIN venues v ON v.id=e.venue_id WHERE (CAST(:q AS TEXT) IS NULL OR e.title ILIKE '%'||:q||'%')
+      AND (CAST(:t AS TEXT) IS NULL OR e.event_type=CAST(:t AS event_type)) AND (CAST(:y AS SMALLINT) IS NULL OR e.event_year=:y)
+      AND (CAST(:m AS SMALLINT) IS NULL OR e.event_month=:m) AND (CAST(:d AS SMALLINT) IS NULL OR e.event_day=:d)
+      AND (CAST(:a AS UUID) IS NULL OR EXISTS(SELECT 1 FROM event_artists x WHERE x.event_id=e.id AND x.artist_id=:a))
+      AND (CAST(:s AS TEXT) IS NULL OR e.status=CAST(:s AS verification_status))
       ORDER BY e.event_year,e.event_month NULLS FIRST,e.event_day NULLS FIRST,lower(e.title) OFFSET :o LIMIT :n"""),
       {"q":q,"t":event_type.upper() if event_type else None,"y":year,"m":month,"d":day,"a":artist_id,"s":status.upper() if status else None,"o":offset,"n":limit}).mappings().all()
     return [dict(x) for x in xs]
@@ -124,3 +124,4 @@ def delete_event(rid:UUID,db:Session=Depends(get_db)):
     x=db.execute(text("DELETE FROM events WHERE id=:id"),{"id":rid})
     if not x.rowcount:db.rollback();raise HTTPException(404,"Evento non trovato.")
     db.commit();return Response(status_code=204)
+

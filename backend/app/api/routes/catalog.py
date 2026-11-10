@@ -1,4 +1,4 @@
-from datetime import date
+﻿from datetime import date
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import text
@@ -22,7 +22,7 @@ def validate_ids(db,table,values):
     if table not in {"artists","genres"}: raise ValueError()
     vals=list(dict.fromkeys(values or []))
     found=db.execute(text(f"SELECT id FROM {table} WHERE id=ANY(:ids)"),{"ids":vals}).scalars().all() if vals else []
-    if len(found)!=len(vals): raise HTTPException(422,f"Uno o più riferimenti {table} non esistono.")
+    if len(found)!=len(vals): raise HTTPException(422,f"Uno o piÃ¹ riferimenti {table} non esistono.")
     return vals
 
 def partial_date(y,m,d,p):
@@ -36,7 +36,7 @@ def partial_date(y,m,d,p):
 
 @router.get("/labels")
 def labels(q:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=200),db:Session=Depends(get_db)):
-    return [dict(x) for x in db.execute(text("SELECT * FROM labels WHERE (:q IS NULL OR name ILIKE '%'||:q||'%') ORDER BY lower(name),id OFFSET :o LIMIT :n"),{"q":q,"o":offset,"n":limit}).mappings().all()]
+    return [dict(x) for x in db.execute(text("SELECT * FROM labels WHERE (CAST(:q AS TEXT) IS NULL OR name ILIKE '%'||:q||'%') ORDER BY lower(name),id OFFSET :o LIMIT :n"),{"q":q,"o":offset,"n":limit}).mappings().all()]
 
 @router.post("/labels",status_code=201)
 def create_label(p:dict,db:Session=Depends(get_db)):
@@ -46,7 +46,7 @@ def create_label(p:dict,db:Session=Depends(get_db)):
     if d["founded_year"] and d["dissolved_year"] and d["dissolved_year"]<d["founded_year"]: raise HTTPException(422,"Intervallo anni etichetta non valido.")
     try:
         x=row(db,"INSERT INTO labels(name,country_code,founded_year,dissolved_year,website) VALUES (:name,:country_code,:founded_year,:dissolved_year,:website) RETURNING *",d);db.commit();return x
-    except IntegrityError as e:db.rollback();raise HTTPException(409,"Etichetta già presente.") from e
+    except IntegrityError as e:db.rollback();raise HTTPException(409,"Etichetta giÃ  presente.") from e
 
 @router.get("/labels/{rid}")
 def label(rid:UUID,db:Session=Depends(get_db)):return get_or_404(db,"labels",rid)
@@ -63,7 +63,7 @@ def patch_label(rid:UUID,p:dict,db:Session=Depends(get_db)):
     if merged["founded_year"] and merged["dissolved_year"] and merged["dissolved_year"]<merged["founded_year"]:raise HTTPException(422,"Intervallo anni etichetta non valido.")
     try:
         x=row(db,"UPDATE labels SET "+",".join(f"{k}=:{k}" for k in d)+" WHERE id=:id RETURNING *",{**d,"id":rid});db.commit();return x
-    except IntegrityError as e:db.rollback();raise HTTPException(409,"Etichetta già presente.") from e
+    except IntegrityError as e:db.rollback();raise HTTPException(409,"Etichetta giÃ  presente.") from e
 
 @router.delete("/labels/{rid}",status_code=204)
 def delete_label(rid:UUID,db:Session=Depends(get_db)):
@@ -74,7 +74,7 @@ def delete_label(rid:UUID,db:Session=Depends(get_db)):
 @router.get("/release-groups")
 def release_groups(q:str|None=None,primary_type:str|None=None,year:int|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=200),db:Session=Depends(get_db)):
     xs=db.execute(text("""SELECT g.*,COUNT(DISTINCT r.id)::int edition_count FROM release_groups g LEFT JOIN releases r ON r.release_group_id=g.id
-      WHERE (:q IS NULL OR g.title ILIKE '%'||:q||'%') AND (:t IS NULL OR g.primary_type=:t) AND (:y IS NULL OR g.first_release_year=:y)
+      WHERE (CAST(:q AS TEXT) IS NULL OR g.title ILIKE '%'||:q||'%') AND (CAST(:t AS TEXT) IS NULL OR g.primary_type=:t) AND (CAST(:y AS SMALLINT) IS NULL OR g.first_release_year=:y)
       GROUP BY g.id ORDER BY g.first_release_year NULLS LAST,lower(g.title),g.id OFFSET :o LIMIT :n"""),{"q":q,"t":primary_type,"y":year,"o":offset,"n":limit}).mappings().all()
     return [dict(x) for x in xs]
 
@@ -116,8 +116,8 @@ def release_detail(db,rid):
 def releases(q:str|None=None,artist_id:UUID|None=None,release_group_id:UUID|None=None,year:int|None=None,country_code:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=200),db:Session=Depends(get_db)):
     xs=db.execute(text("""SELECT r.id,r.release_group_id,r.title,r.country_code,r.release_year,r.release_month,r.release_day,r.date_precision,r.format,r.catalog_number,r.status,g.title release_group_title,l.name label_name
       FROM releases r LEFT JOIN release_groups g ON g.id=r.release_group_id LEFT JOIN labels l ON l.id=r.label_id
-      WHERE (:q IS NULL OR r.title ILIKE '%'||:q||'%') AND (:a IS NULL OR EXISTS(SELECT 1 FROM release_artists x WHERE x.release_id=r.id AND x.artist_id=:a))
-      AND (:g IS NULL OR r.release_group_id=:g) AND (:y IS NULL OR r.release_year=:y) AND (:c IS NULL OR r.country_code=:c)
+      WHERE (CAST(:q AS TEXT) IS NULL OR r.title ILIKE '%'||:q||'%') AND (CAST(:a AS UUID) IS NULL OR EXISTS(SELECT 1 FROM release_artists x WHERE x.release_id=r.id AND x.artist_id=:a))
+      AND (CAST(:g AS UUID) IS NULL OR r.release_group_id=:g) AND (CAST(:y AS SMALLINT) IS NULL OR r.release_year=:y) AND (CAST(:c AS CHAR(2)) IS NULL OR r.country_code=:c)
       ORDER BY r.release_year NULLS LAST,r.release_month NULLS LAST,r.release_day NULLS LAST,lower(r.title) OFFSET :o LIMIT :n"""),
       {"q":q,"a":artist_id,"g":release_group_id,"y":year,"c":country_code.upper() if country_code else None,"o":offset,"n":limit}).mappings().all()
     return [dict(x) for x in xs]
@@ -176,3 +176,4 @@ def delete_release(rid:UUID,db:Session=Depends(get_db)):
     x=db.execute(text("DELETE FROM releases WHERE id=:id"),{"id":rid})
     if not x.rowcount:db.rollback();raise HTTPException(404,"Pubblicazione non trovata.")
     db.commit();return Response(status_code=204)
+
