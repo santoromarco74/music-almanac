@@ -11,6 +11,7 @@ from app.api.routes.ingestion import router as ingestion_router
 from app.api.routes.memberships import router as memberships_router
 from app.api.routes.musicbrainz_lookup import router as musicbrainz_lookup_router
 from app.api.routes.musicbrainz_normalizer import router as musicbrainz_normalizer_router
+from app.api.routes.musicbrainz_normalization_engine import router as musicbrainz_normalization_engine_router
 from app.api.routes.musicbrainz_release_groups import router as musicbrainz_release_groups_router
 from app.api.routes.musicbrainz_releases import router as musicbrainz_releases_router
 from app.api.routes.musicbrainz_pipeline import router as musicbrainz_pipeline_router
@@ -19,10 +20,11 @@ from app.api.routes.musicbrainz_review_workflow import router as musicbrainz_rev
 from app.api.routes.provenance import router as provenance_router
 from app.db import engine
 
-app = FastAPI(title="Music Almanac API", version="1.6.0", description="Archivio storico musicale internazionale.")
+app = FastAPI(title="Music Almanac API", version="1.7.0", description="Archivio storico musicale internazionale.")
 
 for route in (artists_router, genres_router, memberships_router, ingestion_router,
               musicbrainz_lookup_router, musicbrainz_normalizer_router,
+              musicbrainz_normalization_engine_router,
               musicbrainz_release_groups_router, musicbrainz_releases_router,
               musicbrainz_pipeline_router, musicbrainz_review_router,
               musicbrainz_review_workflow_router, catalog_router, events_router,
@@ -39,9 +41,10 @@ def health():
 
 @app.get("/api/v1", tags=["system"])
 def api_root():
-    return {"name": "Music Almanac API", "version": "1.6.0", "modules": [
+    return {"name": "Music Almanac API", "version": "1.7.0", "modules": [
         "artists", "genres", "memberships", "ingestion", "musicbrainz_lookup",
-        "musicbrainz_normalizer", "musicbrainz_release_groups", "musicbrainz_releases",
+        "musicbrainz_normalizer", "musicbrainz_normalization_engine",
+        "musicbrainz_release_groups", "musicbrainz_releases",
         "musicbrainz_pipeline", "musicbrainz_review", "musicbrainz_review_workflow",
         "labels", "release_groups", "releases", "venues", "events", "sources",
         "external_identifiers", "entity_sources", "date_assertions", "awards",
