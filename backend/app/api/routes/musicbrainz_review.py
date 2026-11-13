@@ -37,7 +37,7 @@ def _musicbrainz_records(db: Session, status: str | None, entity: str, limit: in
         JOIN ingestion_runs ir ON ir.id=rr.ingestion_run_id
         JOIN sources s ON s.id=ir.source_id
         WHERE s.name='MusicBrainz'
-          AND (:status IS NULL OR rr.processing_status=:status)
+          AND (CAST(:status AS text) IS NULL OR rr.processing_status::text = CAST(:status AS text))
           AND (
             :entity='all'
             OR (:entity='release_groups' AND (rr.payload ? 'primary-type' OR rr.payload ? 'secondary-types'))
@@ -246,3 +246,4 @@ def unresolved_dependencies(
         "read_only": True,
         "note": "La risoluzione delle dipendenze richiede collegamenti espliciti e revisione editoriale.",
     }
+

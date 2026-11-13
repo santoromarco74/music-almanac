@@ -1,0 +1,5 @@
+--- a/backend/app/api/routes/musicbrainz_review.py
++++ b/backend/app/api/routes/musicbrainz_review.py
+@@ -40,1 +40,1 @@
+-          AND (:status IS NULL OR rr.processing_status=:status)
++          AND (CAST(:status AS text) IS NULL OR rr.processing_status=CAST(:status AS text))

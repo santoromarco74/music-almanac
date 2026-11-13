@@ -1,12 +1,12 @@
 $ErrorActionPreference = 'Stop'
 $BaseUrl = 'http://localhost:8000'
-Write-Host 'Music Almanac v1.5.0 - review smoke test'
+Write-Host 'Music Almanac v1.6.0 - review smoke test'
 
 $health = Invoke-RestMethod "$BaseUrl/health"
 if ($health.status -ne 'ok') { throw 'Health check fallito.' }
 
 $api = Invoke-RestMethod "$BaseUrl/api/v1"
-if ($api.version -ne '1.5.0') { throw "Versione API inattesa: $($api.version)" }
+if ($api.version -ne '1.6.0') { throw "Versione API inattesa: $($api.version)" }
 if ($api.modules -notcontains 'musicbrainz_review') { throw 'Modulo musicbrainz_review non registrato.' }
 
 $openapi = Invoke-RestMethod "$BaseUrl/openapi.json"
